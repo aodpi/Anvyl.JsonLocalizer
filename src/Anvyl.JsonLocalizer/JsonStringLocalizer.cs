@@ -12,7 +12,13 @@ namespace Anvyl.JsonLocalizer
 
         public JsonStringLocalizer(IDistributedCache cache) => _cache = cache;
 
-        public LocalizedString this[string name] => throw new NotImplementedException();
+        public LocalizedString this[string name]
+        {
+            get
+            {
+                return new LocalizedString(name, $"[{name}]", true);
+            }
+        }
 
         public LocalizedString this[string name, params object[] arguments] => throw new NotImplementedException();
 
