@@ -7,7 +7,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A443E44C-688
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{707EEF6B-3687-445F-91E2-B19DD8900321}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Anvyl.JsonLocalizer", "src\Anvyl.JsonLocalizer\Anvyl.JsonLocalizer.csproj", "{C11B47CC-93D7-4F9D-B4D5-4DB3AF8FFE56}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Anvyl.JsonLocalizer", "src\Anvyl.JsonLocalizer\Anvyl.JsonLocalizer.csproj", "{C11B47CC-93D7-4F9D-B4D5-4DB3AF8FFE56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Anvyl.JsonLocalizer.Presentation", "src\Anvyl.JsonLocalizer.Presentation\Anvyl.JsonLocalizer.Presentation.csproj", "{22888A12-E09E-4C63-A770-20900EE259A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,12 +21,17 @@ Global
 		{C11B47CC-93D7-4F9D-B4D5-4DB3AF8FFE56}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C11B47CC-93D7-4F9D-B4D5-4DB3AF8FFE56}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C11B47CC-93D7-4F9D-B4D5-4DB3AF8FFE56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22888A12-E09E-4C63-A770-20900EE259A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22888A12-E09E-4C63-A770-20900EE259A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22888A12-E09E-4C63-A770-20900EE259A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22888A12-E09E-4C63-A770-20900EE259A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C11B47CC-93D7-4F9D-B4D5-4DB3AF8FFE56} = {A443E44C-6880-4210-9FD3-865FF23F16DA}
+		{22888A12-E09E-4C63-A770-20900EE259A1} = {A443E44C-6880-4210-9FD3-865FF23F16DA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1A504EC8-AAD2-467F-9AC0-35C509EA19B5}

@@ -286,3 +286,6 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+*.min.js
+*.min.css
+/src/Anvyl.JsonLocalizer.Presentation/wwwroot/lib/
