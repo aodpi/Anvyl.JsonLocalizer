@@ -5,11 +5,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Anvyl.JsonLocalizer.Presentation.Models;
+using Microsoft.Extensions.Localization;
 
 namespace Anvyl.JsonLocalizer.Presentation.Controllers
 {
     public class HomeController : Controller
     {
+        private IStringLocalizer _localizer;
+
+        public HomeController(IStringLocalizerFactory localizer)
+        {
+            _localizer = localizer.Create(null);
+        }
         public IActionResult Index()
         {
             return View();

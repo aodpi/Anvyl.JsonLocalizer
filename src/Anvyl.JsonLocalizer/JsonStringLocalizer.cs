@@ -6,11 +6,11 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace Anvyl.JsonLocalizer
 {
-    public class JsonLocalizer : IStringLocalizer
+    public class JsonStringLocalizer : IStringLocalizer
     {
         private readonly IDistributedCache _cache;
 
-        public JsonLocalizer(IDistributedCache cache) => _cache = cache;
+        public JsonStringLocalizer(IDistributedCache cache) => _cache = cache;
 
         public LocalizedString this[string name] => throw new NotImplementedException();
 
