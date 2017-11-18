@@ -14,6 +14,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{BD6D614C-F86F-4ABF-8FB8-836367C15C50}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		.travis.yml = .travis.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Anvyl.JsonLocalizer.Tests", "test\Anvyl.JsonLocalizer.Tests\Anvyl.JsonLocalizer.Tests.csproj", "{0CF41B00-8110-4015-84D0-A27EFF5D8A4D}"
