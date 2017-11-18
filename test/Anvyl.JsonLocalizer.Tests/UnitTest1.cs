@@ -12,11 +12,7 @@ namespace Anvyl.JsonLocalizer.Tests
         public UnitTest1()
         {
             ServiceCollection services = new ServiceCollection();
-            services.AddDistributedRedisCache(opts =>
-            {
-                opts.Configuration = "localhost";
-                opts.InstanceName = "Anvyl.JsonLocalizer.Test";
-            });
+            services.AddDistributedMemoryCache();
 
             services.AddSingleton<IStringLocalizerFactory, JsonStringLocalizerFactory>();
             _provider = services.BuildServiceProvider();
