@@ -1,37 +1,12 @@
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
-using System.Globalization;
-using System.Linq;
 using Xunit;
+using System.Linq;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Anvyl.JsonLocalizer.Tests
 {
-    public class JsonLocalizerTests
+    public class JsonLocalizerTests : BaseTest
     {
-        private readonly IStringLocalizer _localizer;
-        private const string CacheKeyPrefix = "__loc__";
-        private const string ResourcesPath = "Localization";
-        private readonly IDistributedCache _cache;
-
-        public JsonLocalizerTests()
-        {
-            var services = new ServiceCollection();
-            services.AddDistributedMemoryCache();
-            services.Configure<JsonLocalizerOptions>(opts =>
-            {
-                opts.CacheKeyPrefix = CacheKeyPrefix;
-                opts.ResourcesPath = ResourcesPath;
-            });
-            services.AddSingleton<IStringLocalizerFactory, JsonStringLocalizerFactory>();
-            
-            var provider = services.BuildServiceProvider();
-            var factory = provider.GetRequiredService<IStringLocalizerFactory>();
-            
-            _localizer = factory.Create(null);
-            _cache = provider.GetRequiredService<IDistributedCache>();
-        }
-
         [Fact(DisplayName = "Show [<key>] whenever the <key> does not exist in json file")]
         public void Returns_Resource_NotFound_With_Square_Brackets()
         {
@@ -76,19 +51,7 @@ namespace Anvyl.JsonLocalizer.Tests
             Assert.Equal($"[{locKey}]", _localizer[locKey].Value);
             Assert.Null(_cache.GetString($"{CacheKeyPrefix}_{locKey}"));
         }
-
-        [Fact(DisplayName = "Creates new file for new culture with null values")]
-        public void ThrowsIOExceptionForMissingJson()
-        {
-            var localizerRO = _localizer.WithCulture(new CultureInfo("ro-RO"));
-            const string locKey = "Hello";
-            Assert.NotNull(localizerRO);
-            Assert.True(localizerRO[locKey].ResourceNotFound);
-            Assert.Equal($"[{locKey}]", localizerRO[locKey]);
-            // Cleanup
-            CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
-        }
-
+        
         [Fact(DisplayName = "Test GetAllStrings")]
         public void GetAllStrings()
         {
