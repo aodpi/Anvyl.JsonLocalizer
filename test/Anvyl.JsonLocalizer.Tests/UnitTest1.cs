@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using System;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using Xunit;
 
@@ -77,16 +78,14 @@ namespace Anvyl.JsonLocalizer.Tests
             Assert.Null(_cache.GetString($"{cacheKeyPrefix}_{locKey}"));
         }
 
-        [Fact(DisplayName = "Throw exception when json file for culture does not exist")]
+        [Fact(DisplayName = "Creates new file for new culture with null values")]
         public void ThrowsIOExceptionForMissingJson()
         {
             var localizerRO = _localizer.WithCulture(new CultureInfo("ro-RO"));
             string locKey = "Hello";
             Assert.NotNull(localizerRO);
-            Assert.Throws<System.IO.FileNotFoundException>(() =>
-            {
-                var roString = localizerRO[locKey];
-            });
+            Assert.True(localizerRO[locKey].ResourceNotFound);
+            Assert.Equal($"[{locKey}]", localizerRO[locKey]);
             // Cleanup
             CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
         }

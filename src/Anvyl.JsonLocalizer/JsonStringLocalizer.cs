@@ -33,20 +33,47 @@ namespace Anvyl.JsonLocalizer
 
         public string GetString(string key)
         {
-            string filePath = $"{_options.Value.ResourcesPath}/{CultureInfo.CurrentCulture.Name}.json";
-            string cacheKey = $"{_options.Value.CacheKeyPrefix}_{key}";
-            string cacheValue = _cache.GetString(cacheKey);
-            if (string.IsNullOrEmpty(cacheValue))
-            {
-                string result = PullDeserialize<string>(key, Path.GetFullPath(filePath));
-                if (!string.IsNullOrEmpty(result))
-                    _cache.SetString(cacheKey, result);
+            string relativeFilePath = $"{_options.Value.ResourcesPath}/{CultureInfo.CurrentCulture.Name}.json";
+            string fullFilePath = Path.GetFullPath(relativeFilePath);
 
-                return result;
+            if (File.Exists(fullFilePath))
+            {
+                string cacheKey = $"{_options.Value.CacheKeyPrefix}_{key}";
+                string cacheValue = _cache.GetString(cacheKey);
+                if (string.IsNullOrEmpty(cacheValue))
+                {
+                    string result = PullDeserialize<string>(key, Path.GetFullPath(relativeFilePath));
+                    if (!string.IsNullOrEmpty(result))
+                        _cache.SetString(cacheKey, result);
+                    return result;
+                }
+                return cacheValue;
             }
-            return cacheValue;
+
+            WriteEmptyKeys(new CultureInfo("en-US"), fullFilePath);
+            return default(string);
         }
 
+        private void WriteEmptyKeys(CultureInfo sourceCulture, string fullFilePath)
+        {
+            using (Stream str = new FileStream($"{_options.Value.ResourcesPath}/{sourceCulture.Name}.json", FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (Stream outStream = File.Create(fullFilePath))
+            using (StreamWriter sWriter = new StreamWriter(outStream))
+            using (JsonTextWriter writer = new JsonTextWriter(sWriter))
+            using (StreamReader sReader = new StreamReader(str))
+            using (JsonTextReader reader = new JsonTextReader(sReader))
+            {
+                writer.Formatting = Formatting.Indented;
+                var jobj = JObject.Load(reader);
+                writer.WriteStartObject();
+                foreach (var property in jobj.Properties())
+                {
+                    writer.WritePropertyName(property.Name);
+                    writer.WriteNull();
+                }
+                writer.WriteEndObject();
+            }
+        }
         /// <summary>
         /// This is used to deserialize only one specific value from
         /// the json without loading the entire object.
@@ -55,8 +82,8 @@ namespace Anvyl.JsonLocalizer
         /// <param name="propertyName">Name of the property to get from json</param>
         /// <param name="str"><see cref="Stream"/> from where to read the json</param>
         /// <returns>Deserialized propert from the json</returns>
-        /// <exception cref="System.ArgumentException"></exception>
-        /// <exception cref="System.ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
         private T PullDeserialize<T>(string propertyName, string filePath)
         {
             if (propertyName == null)
