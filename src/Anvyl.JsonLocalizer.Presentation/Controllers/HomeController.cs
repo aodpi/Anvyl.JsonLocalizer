@@ -16,7 +16,15 @@ namespace Anvyl.JsonLocalizer.Presentation.Controllers
         public HomeController(IStringLocalizerFactory localizer)
         {
             _localizer = localizer.Create(null);
+            string val = _localizer["Hello"];
+            val = _localizer["Hello"];
+            val = _localizer["Hello"];
+            val = _localizer["Hello"];
+            val = _localizer["Hello"];
+            val = _localizer["Hello"];
+            val = _localizer["Hello {0}", "Walera"];
         }
+
         public IActionResult Index()
         {
             return View();
