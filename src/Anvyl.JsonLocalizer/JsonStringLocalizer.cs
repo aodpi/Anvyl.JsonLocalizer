@@ -10,11 +10,27 @@ using Newtonsoft.Json.Linq;
 
 namespace Anvyl.JsonLocalizer
 {
+    /// <summary>
+    /// Service that contains LocalizedStrings with json files as localization
+    /// resources and a DistributedCache to cache out the values read from 
+    /// json resource files
+    /// </summary>
     public class JsonStringLocalizer : IStringLocalizer
     {
+        #region Dependency Injection Fields
+
         private readonly IDistributedCache _cache;
         private readonly IOptions<JsonLocalizerOptions> _options;
+
+        #endregion
+
+        #region Private Fields
+
         private readonly JsonSerializer _serializer = new JsonSerializer();
+
+        #endregion
+
+        #region Constructors
 
         public JsonStringLocalizer(IDistributedCache cache, IOptions<JsonLocalizerOptions> options)
         {
@@ -22,32 +38,102 @@ namespace Anvyl.JsonLocalizer
             _options = options;
         }
 
+        #endregion
+
+        #region IStringLocalizer Implementation
+
+        /// <summary>Gets the string resource with the given name.</summary>
+        /// <param name="name">The name of the string resource.</param>
+        /// <returns>
+        /// The string resource as a <see cref="T:Microsoft.Extensions.Localization.LocalizedString" />.
+        /// </returns>
         public LocalizedString this[string name]
         {
             get
             {
-                string value = GetString(name);
+                var value = GetString(name);
                 return new LocalizedString(name, value ?? $"[{name}]", value == null);
             }
         }
 
-        public string GetString(string key)
+        /// <summary>
+        /// Gets the string resource with the given name and formatted with the supplied arguments.
+        /// </summary>
+        /// <param name="name">The name of the string resource.</param>
+        /// <param name="arguments">The values to format the string with.</param>
+        /// <returns>
+        /// The formatted string resource as a <see cref="T:Microsoft.Extensions.Localization.LocalizedString" />.
+        /// </returns>
+        public LocalizedString this[string name, params object[] arguments]
         {
-            string relativeFilePath = $"{_options.Value.ResourcesPath}/{CultureInfo.CurrentCulture.Name}.json";
-            string fullFilePath = Path.GetFullPath(relativeFilePath);
+            get
+            {
+                var actualValue = this[name];
+                return !actualValue.ResourceNotFound
+                    ? new LocalizedString(name, string.Format(actualValue.Value, arguments), false)
+                    : actualValue;
+            }
+        }
+
+        /// <summary>Gets all string resources.</summary>
+        /// <param name="includeParentCultures">
+        /// A <see cref="T:System.Boolean" /> indicating whether to include strings from parent cultures.
+        /// </param>
+        /// <returns>The strings.</returns>
+        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures)
+        {
+            var filePath = $"{_options.Value.ResourcesPath}/{CultureInfo.CurrentCulture.Name}.json";
+            using (var str = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var sReader = new StreamReader(str))
+            using (var reader = new JsonTextReader(sReader))
+            {
+                while (reader.Read())
+                {
+                    if (reader.TokenType != JsonToken.PropertyName)
+                        continue;
+
+                    var key = (string) reader.Value;
+                    reader.Read();
+                    var value = _serializer.Deserialize<string>(reader);
+                    yield return new LocalizedString(key, value, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="T:Microsoft.Extensions.Localization.IStringLocalizer" /> for 
+        /// a specific <see cref="T:System.Globalization.CultureInfo" />.
+        /// </summary>
+        /// <param name="culture">The <see cref="T:System.Globalization.CultureInfo" /> to use.</param>
+        /// <returns>
+        /// A culture-specific <see cref="T:Microsoft.Extensions.Localization.IStringLocalizer" />.
+        /// </returns>
+        public IStringLocalizer WithCulture(CultureInfo culture)
+        {
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            return new JsonStringLocalizer(_cache, _options);
+        }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        private string GetString(string key)
+        {
+            var relativeFilePath = $"{_options.Value.ResourcesPath}/{CultureInfo.CurrentCulture.Name}.json";
+            var fullFilePath = Path.GetFullPath(relativeFilePath);
 
             if (File.Exists(fullFilePath))
             {
-                string cacheKey = $"{_options.Value.CacheKeyPrefix}_{key}";
-                string cacheValue = _cache.GetString(cacheKey);
-                if (string.IsNullOrEmpty(cacheValue))
-                {
-                    string result = PullDeserialize<string>(key, Path.GetFullPath(relativeFilePath));
-                    if (!string.IsNullOrEmpty(result))
-                        _cache.SetString(cacheKey, result);
-                    return result;
-                }
-                return cacheValue;
+                var cacheKey = $"{_options.Value.CacheKeyPrefix}_{key}";
+                var cacheValue = _cache.GetString(cacheKey);
+                if (!string.IsNullOrEmpty(cacheValue)) return cacheValue;
+
+                var result = PullDeserialize<string>(key, Path.GetFullPath(relativeFilePath));
+                if (!string.IsNullOrEmpty(result))
+                    _cache.SetString(cacheKey, result);
+
+                return result;
             }
 
             WriteEmptyKeys(new CultureInfo("en-US"), fullFilePath);
@@ -56,12 +142,14 @@ namespace Anvyl.JsonLocalizer
 
         private void WriteEmptyKeys(CultureInfo sourceCulture, string fullFilePath)
         {
-            using (Stream str = new FileStream($"{_options.Value.ResourcesPath}/{sourceCulture.Name}.json", FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (Stream outStream = File.Create(fullFilePath))
-            using (StreamWriter sWriter = new StreamWriter(outStream))
-            using (JsonTextWriter writer = new JsonTextWriter(sWriter))
-            using (StreamReader sReader = new StreamReader(str))
-            using (JsonTextReader reader = new JsonTextReader(sReader))
+            var sourceFilePath = $"{_options.Value.ResourcesPath}/{sourceCulture.Name}.json";
+
+            using (var str = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var outStream = File.Create(fullFilePath))
+            using (var sWriter = new StreamWriter(outStream))
+            using (var writer = new JsonTextWriter(sWriter))
+            using (var sReader = new StreamReader(str))
+            using (var reader = new JsonTextReader(sReader))
             {
                 writer.Formatting = Formatting.Indented;
                 var jobj = JObject.Load(reader);
@@ -74,13 +162,14 @@ namespace Anvyl.JsonLocalizer
                 writer.WriteEndObject();
             }
         }
+
         /// <summary>
         /// This is used to deserialize only one specific value from
         /// the json without loading the entire object.
         /// </summary>
         /// <typeparam name="T">Type of the object to deserialize</typeparam>
         /// <param name="propertyName">Name of the property to get from json</param>
-        /// <param name="str"><see cref="Stream"/> from where to read the json</param>
+        /// <param name="filePath">The file path of the json resource file</param>
         /// <returns>Deserialized propert from the json</returns>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="ArgumentNullException"></exception>
@@ -91,15 +180,15 @@ namespace Anvyl.JsonLocalizer
 
             if (filePath == null)
                 throw new ArgumentNullException(nameof(filePath));
-            
-            using (Stream str = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (StreamReader sReader = new StreamReader(str))
-            using (JsonTextReader reader = new JsonTextReader(sReader))
+
+            using (var str = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var sReader = new StreamReader(str))
+            using (var reader = new JsonTextReader(sReader))
             {
                 while (reader.Read())
                 {
                     if (reader.TokenType == JsonToken.PropertyName
-                        && (string)reader.Value == propertyName)
+                        && (string) reader.Value == propertyName)
                     {
                         reader.Read();
                         return _serializer.Deserialize<T>(reader);
@@ -109,42 +198,6 @@ namespace Anvyl.JsonLocalizer
             }
         }
 
-        public LocalizedString this[string name, params object[] arguments]
-        {
-            get
-            {
-                LocalizedString actualValue = this[name];
-                if (!actualValue.ResourceNotFound)
-                    return new LocalizedString(name, string.Format(actualValue.Value, arguments), false);
-                return actualValue;
-            }
-        }
-
-        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures)
-        {
-            string filePath = $"{_options.Value.ResourcesPath}/{CultureInfo.CurrentCulture.Name}.json";
-            using (Stream str = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (StreamReader sReader = new StreamReader(str))
-            using (JsonTextReader reader = new JsonTextReader(sReader))
-            {
-                while(reader.Read())
-                {
-                    if(reader.TokenType == JsonToken.PropertyName)
-                    {
-                        string key = (string)reader.Value;
-                        reader.Read();
-                        string value = _serializer.Deserialize<string>(reader);
-                        yield return new LocalizedString(key, value, false);
-                    }
-                }
-                yield break;
-            }
-        }
-
-        public IStringLocalizer WithCulture(CultureInfo culture)
-        {
-            CultureInfo.DefaultThreadCurrentCulture = culture;
-            return new JsonStringLocalizer(_cache, _options);
-        }
+        #endregion
     }
 }
