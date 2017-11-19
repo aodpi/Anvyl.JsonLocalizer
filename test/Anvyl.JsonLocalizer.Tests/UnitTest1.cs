@@ -13,7 +13,11 @@ namespace Anvyl.JsonLocalizer.Tests
         {
             ServiceCollection services = new ServiceCollection();
             services.AddDistributedMemoryCache();
-
+            services.Configure<JsonLocalizerOptions>(opts =>
+            {
+                opts.CacheKeyPrefix = "__loc__";
+                opts.ResourcesPath = "Localization";
+            });
             services.AddSingleton<IStringLocalizerFactory, JsonStringLocalizerFactory>();
             _provider = services.BuildServiceProvider();
         }
@@ -26,10 +30,6 @@ namespace Anvyl.JsonLocalizer.Tests
             Assert.NotNull(localizer);
             Assert.NotNull(localizer[locKey]);
             Assert.True(localizer[locKey].ResourceNotFound);
-            var cache = _provider.GetRequiredService<IDistributedCache>();
-            Assert.Null(cache.GetString(locKey));
-            cache.SetString(locKey, "Dasdasdasd");
-            Assert.NotNull(cache.GetString(locKey));
         }
     }
 }

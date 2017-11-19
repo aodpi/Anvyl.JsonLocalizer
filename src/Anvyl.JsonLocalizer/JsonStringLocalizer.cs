@@ -39,7 +39,9 @@ namespace Anvyl.JsonLocalizer
             if (string.IsNullOrEmpty(cacheValue))
             {
                 string result = PullDeserialize<string>(key, Path.GetFullPath(filePath));
-                _cache.SetString(cacheKey, result);
+                if (!string.IsNullOrEmpty(result))
+                    _cache.SetString(cacheKey, result);
+
                 return result;
             }
             return cacheValue;
