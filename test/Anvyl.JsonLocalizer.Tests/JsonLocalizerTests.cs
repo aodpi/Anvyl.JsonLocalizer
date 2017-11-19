@@ -1,3 +1,4 @@
+using System.Globalization;
 using Xunit;
 using System.Linq;
 using Microsoft.Extensions.Localization;
@@ -26,7 +27,21 @@ namespace Anvyl.JsonLocalizer.Tests
             Assert.True(!_localizer[locKey].ResourceNotFound);
             Assert.Equal("Noroc", _localizer[locKey].Value);
         }
+        
+        
+        [Fact(DisplayName = "Creates a new json file with null values copied from default culture")]
+        public void Creates_New_File_Copying_From_Default()
+        {
+            var localizerRO = _localizer.WithCulture(new CultureInfo("ro-RO"));
+            const string locKey = "Hello";
+            Assert.NotNull(localizerRO);
+            Assert.True(localizerRO[locKey].ResourceNotFound);
+            Assert.Equal($"[{locKey}]", localizerRO[locKey]);
 
+            // Cleanup
+            CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
+        }
+        
         [Fact(DisplayName = "Returns a resource that should be cached afterwards")]
         public void Returns_Resource_And_Is_Saved_In_Cache()
         {
