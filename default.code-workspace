@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "src\\Anvyl.JsonLocalizer.Presentation"
+		},
+		{
+			"path": "src\\Anvyl.JsonLocalizer"
+		}
+	],
+	"settings": {}
+}
