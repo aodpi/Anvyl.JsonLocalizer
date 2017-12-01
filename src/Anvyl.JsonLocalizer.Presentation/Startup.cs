@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -32,10 +34,9 @@ namespace Anvyl.JsonLocalizer.Presentation
                 });
             }
 
-            if(Environment.IsDevelopment())
-            {
+            if (Environment.IsDevelopment())
                 services.AddDistributedMemoryCache();
-            }
+
             services.Configure<JsonLocalizerOptions>(Configuration.GetSection(nameof(JsonLocalizerOptions)));
             services.AddSingleton<IStringLocalizerFactory, JsonStringLocalizerFactory>();
             services.AddMvc();
@@ -54,8 +55,23 @@ namespace Anvyl.JsonLocalizer.Presentation
                 app.UseExceptionHandler("/Home/Error");
             }
 
-            app.UseStaticFiles();
+            var options = new RequestLocalizationOptions
+            {
+                DefaultRequestCulture = new RequestCulture(new CultureInfo("en-US")),
+                SupportedCultures = new CultureInfo[]{
+                    new CultureInfo("en-US"),
+                    new CultureInfo("ro-RO")
+                },
+                SupportedUICultures = new CultureInfo[]{
+                    new CultureInfo("en-US"),
+                    new CultureInfo("ro-RO")
+                }
+            };
 
+            options.RequestCultureProviders.Insert(0, new CookieRequestCultureProvider());
+
+            app.UseRequestLocalization(options);
+            app.UseStaticFiles();
             app.UseMvc(routes =>
             {
                 routes.MapRoute(

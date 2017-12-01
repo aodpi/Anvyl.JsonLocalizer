@@ -1,5 +1,9 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@using Microsoft.Extensions.Localization
+@inject IStringLocalizerFactory localizerFactory
+
+@{
+    var _ = localizerFactory.Create(null);
+    ViewData["Title"] = _["Home.HomePage"];
 }
 
 <div id="myCarousel" class="carousel slide" data-ride="carousel" data-interval="6000">
@@ -14,9 +18,9 @@
             <img src="~/images/banner1.svg" alt="ASP.NET" class="img-responsive" />
             <div class="carousel-caption" role="option">
                 <p>
-                    Learn how to build ASP.NET apps that can run anywhere.
+                    @_["Home.BuildASPNET"]
                     <a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkID=525028&clcid=0x409">
-                        Learn More
+                        @_["Learn More"]
                     </a>
                 </p>
             </div>
@@ -27,7 +31,7 @@
                 <p>
                     There are powerful new features in Visual Studio for building modern web apps.
                     <a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkID=525030&clcid=0x409">
-                        Learn More
+                        @_["Learn More"]
                     </a>
                 </p>
             </div>
@@ -38,7 +42,7 @@
                 <p>
                     Bring in libraries from NuGet, Bower, and npm, and automate tasks using Grunt or Gulp.
                     <a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkID=525029&clcid=0x409">
-                        Learn More
+                        @_["Learn More"]
                     </a>
                 </p>
             </div>
@@ -49,7 +53,7 @@
                 <p>
                     Learn how Microsoft's Azure cloud platform allows you to build, deploy, and scale web apps.
                     <a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkID=525027&clcid=0x409">
-                        Learn More
+                        @_["Learn More"]
                     </a>
                 </p>
             </div>
@@ -86,7 +90,7 @@
         </ul>
     </div>
     <div class="col-md-3">
-        <h2>Overview</h2>
+        <h2>@_["Overview"]</h2>
         <ul>
             <li><a href="https://go.microsoft.com/fwlink/?LinkId=518008">Conceptual overview of what is ASP.NET Core</a></li>
             <li><a href="https://go.microsoft.com/fwlink/?LinkId=699320">Fundamentals of ASP.NET Core such as Startup and middleware.</a></li>
