@@ -32,6 +32,12 @@ namespace Anvyl.JsonLocalizer
 
         #region Constructors
 
+        /// <summary>
+        /// The default constructor for this servce injecting
+        /// the required dependencies
+        /// </summary>
+        /// <param name="cache">The <see cref="IDistributedCache"/> implementation to use</param>
+        /// <param name="options">The configuration options for the json localizer</param>
         public JsonStringLocalizer(IDistributedCache cache, IOptions<JsonLocalizerOptions> options)
         {
             _cache = cache;
@@ -92,7 +98,7 @@ namespace Anvyl.JsonLocalizer
                     if (reader.TokenType != JsonToken.PropertyName)
                         continue;
 
-                    var key = (string) reader.Value;
+                    var key = (string)reader.Value;
                     reader.Read();
                     var value = _serializer.Deserialize<string>(reader);
                     yield return new LocalizedString(key, value, false);
@@ -188,7 +194,7 @@ namespace Anvyl.JsonLocalizer
                 while (reader.Read())
                 {
                     if (reader.TokenType == JsonToken.PropertyName
-                        && (string) reader.Value == propertyName)
+                        && (string)reader.Value == propertyName)
                     {
                         reader.Read();
                         return _serializer.Deserialize<T>(reader);
