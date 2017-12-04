@@ -289,4 +289,3 @@ __pycache__/
 *.min.js
 *.min.css
 /src/Anvyl.JsonLocalizer.Presentation/wwwroot/lib/
-.vscode
