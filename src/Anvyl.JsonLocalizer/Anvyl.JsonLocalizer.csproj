@@ -6,6 +6,7 @@
     <RepositoryUrl>https://github.com/aodpi/Anvyl.JsonLocalizer</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Authors>Valeriu Balan</Authors>
+    <Description>Json Localization for ASP.NET Core</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
