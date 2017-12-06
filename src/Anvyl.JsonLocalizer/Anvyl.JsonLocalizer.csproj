@@ -7,6 +7,9 @@
     <RepositoryType>git</RepositoryType>
     <Authors>Valeriu Balan</Authors>
     <Description>Json Localization for ASP.NET Core</Description>
+    <PackageProjectUrl>https://github.com/aodpi/Anvyl.JsonLocalizer</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/aodpi/Anvyl.JsonLocalizer/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageTags>asp.net core localization json i18n cache redis</PackageTags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
