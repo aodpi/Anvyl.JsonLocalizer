@@ -22,7 +22,7 @@ services.Configure<JsonLocalizerOptions>(Configuration.GetSection(nameof(JsonLoc
 services.AddSingleton<IStringLocalizerFactory, JsonStringLocalizerFactory>();
 services.AddTransient(serviceProvider =>
 {
-var factory = serviceProvider.GetRequiredService<IStringLocalizerFactory>();
-return factory.Create(null);
+    var factory = serviceProvider.GetRequiredService<IStringLocalizerFactory>();
+    return factory.Create(null);
 });
 ```
