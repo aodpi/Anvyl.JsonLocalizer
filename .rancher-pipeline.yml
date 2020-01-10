@@ -1,0 +1,8 @@
+stages:
+- name: dotnet restore
+  steps:
+  - runScriptConfig:
+      image: mcr.microsoft.com/dotnet/core/sdk
+      shellScript: dotnet restore
+timeout: 60
+notification: {}
