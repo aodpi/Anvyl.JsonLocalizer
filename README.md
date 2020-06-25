@@ -26,3 +26,7 @@ services.AddTransient(serviceProvider =>
     return factory.Create(null);
 });
 ```
+
+## Installation
+
+Checkout package description and installation instructions on [nuget.org](https://www.nuget.org/packages/Anvyl.JsonLocalizer)
