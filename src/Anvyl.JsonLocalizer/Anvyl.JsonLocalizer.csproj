@@ -10,7 +10,15 @@
     <PackageProjectUrl>https://github.com/aodpi/Anvyl.JsonLocalizer</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/aodpi/Anvyl.JsonLocalizer/blob/master/LICENSE</PackageLicenseUrl>
     <PackageTags>asp.net core localization json i18n cache redis</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile>bin\Debug\netcoreapp2.0\Anvyl.JsonLocalizer.xml</DocumentationFile>
