@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
-using System.IO;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Anvyl.JsonLocalizer
 {
@@ -17,193 +13,114 @@ namespace Anvyl.JsonLocalizer
     /// </summary>
     public class JsonStringLocalizer : IStringLocalizer
     {
-        #region Dependency Injection Fields
-
-        private readonly IDistributedCache _cache;
         private readonly IOptions<JsonLocalizerOptions> _options;
+        private readonly IMemoryCache _cache;
 
-        #endregion
+        private static ReadOnlySpan<byte> Utf8Bom => new byte[] { 0xEF, 0xBB, 0xBF };
 
-        #region Private Fields
-
-        private readonly JsonSerializer _serializer = new JsonSerializer();
-
-        #endregion
-
-        #region Constructors
-
-        /// <summary>
-        /// The default constructor for this servce injecting
-        /// the required dependencies
-        /// </summary>
-        /// <param name="cache">The <see cref="IDistributedCache"/> implementation to use</param>
-        /// <param name="options">The configuration options for the json localizer</param>
-        public JsonStringLocalizer(IDistributedCache cache, IOptions<JsonLocalizerOptions> options)
+        public JsonStringLocalizer(IOptions<JsonLocalizerOptions> options, IMemoryCache cache)
         {
-            _cache = cache;
             _options = options;
+            _cache = cache;
         }
 
-        #endregion
-
-        #region IStringLocalizer Implementation
-
-        /// <summary>Gets the string resource with the given name.</summary>
-        /// <param name="name">The name of the string resource.</param>
-        /// <returns>
-        /// The string resource as a <see cref="T:Microsoft.Extensions.Localization.LocalizedString" />.
-        /// </returns>
         public LocalizedString this[string name]
         {
             get
             {
-                var value = GetString(name);
-                return new LocalizedString(name, value ?? $"[{name}]", value == null);
+                var str = GetString(name);
+                return new LocalizedString(name, string.IsNullOrEmpty(str) ? $"[{name}]" : str, string.IsNullOrEmpty(str));
             }
         }
 
-        /// <summary>
-        /// Gets the string resource with the given name and formatted with the supplied arguments.
-        /// </summary>
-        /// <param name="name">The name of the string resource.</param>
-        /// <param name="arguments">The values to format the string with.</param>
-        /// <returns>
-        /// The formatted string resource as a <see cref="T:Microsoft.Extensions.Localization.LocalizedString" />.
-        /// </returns>
         public LocalizedString this[string name, params object[] arguments]
         {
             get
             {
-                var actualValue = this[name];
-                return !actualValue.ResourceNotFound
-                    ? new LocalizedString(name, string.Format(actualValue.Value, arguments), false)
-                    : actualValue;
+                var value = this[name];
+
+                return value.ResourceNotFound
+                    ? value
+                    : new LocalizedString(name, string.Format(CultureInfo.InvariantCulture, value.Value, arguments), false);
             }
         }
 
-        /// <summary>Gets all string resources.</summary>
-        /// <param name="includeParentCultures">
-        /// A <see cref="T:System.Boolean" /> indicating whether to include strings from parent cultures.
-        /// </param>
-        /// <returns>The strings.</returns>
         public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures)
         {
-            var filePath = $"{_options.Value.ResourcesPath}/{CultureInfo.CurrentCulture.Name}.json";
-            using (var str = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var sReader = new StreamReader(str))
-            using (var reader = new JsonTextReader(sReader))
-            {
-                while (reader.Read())
-                {
-                    if (reader.TokenType != JsonToken.PropertyName)
-                        continue;
-
-                    var key = (string)reader.Value;
-                    reader.Read();
-                    var value = _serializer.Deserialize<string>(reader);
-                    yield return new LocalizedString(key, value, false);
-                }
-            }
+            yield return new LocalizedString(string.Empty, string.Empty, true);
         }
-
-        /// <summary>
-        /// Creates a new <see cref="T:Microsoft.Extensions.Localization.IStringLocalizer" /> for 
-        /// a specific <see cref="T:System.Globalization.CultureInfo" />.
-        /// </summary>
-        /// <param name="culture">The <see cref="T:System.Globalization.CultureInfo" /> to use.</param>
-        /// <returns>
-        /// A culture-specific <see cref="T:Microsoft.Extensions.Localization.IStringLocalizer" />.
-        /// </returns>
-        public IStringLocalizer WithCulture(CultureInfo culture)
-        {
-            CultureInfo.DefaultThreadCurrentCulture = culture;
-            return new JsonStringLocalizer(_cache, _options);
-        }
-
-        #endregion
-
-        #region Private Helper Methods
 
         private string GetString(string key)
         {
-            var relativeFilePath = $"{_options.Value.ResourcesPath}/{CultureInfo.CurrentCulture.Name}.json";
-            var fullFilePath = Path.GetFullPath(relativeFilePath);
+            var cacheKey = $"{_options.Value.CacheKeyPrefix}_{key}";
 
-            if (File.Exists(fullFilePath))
+            return _cache.GetOrCreate(cacheKey, (e) =>
             {
-                var cacheKey = $"{_options.Value.CacheKeyPrefix}_{key}";
-                var cacheValue = _cache.GetString(cacheKey);
-                if (!string.IsNullOrEmpty(cacheValue)) return cacheValue;
+                var relativePath = $"{_options.Value.ResourcesPath}/{CultureInfo.CurrentCulture.Name}.json";
+                var fullFilePath = Path.GetFullPath(relativePath);
 
-                var result = PullDeserialize<string>(key, Path.GetFullPath(relativeFilePath));
-                if (!string.IsNullOrEmpty(result))
-                    _cache.SetString(cacheKey, result);
-
-                return result;
-            }
-
-            WriteEmptyKeys(new CultureInfo("en-US"), fullFilePath);
-            return default(string);
-        }
-
-        private void WriteEmptyKeys(CultureInfo sourceCulture, string fullFilePath)
-        {
-            var sourceFilePath = $"{_options.Value.ResourcesPath}/{sourceCulture.Name}.json";
-
-            using (var str = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var outStream = File.Create(fullFilePath))
-            using (var sWriter = new StreamWriter(outStream))
-            using (var writer = new JsonTextWriter(sWriter))
-            using (var sReader = new StreamReader(str))
-            using (var reader = new JsonTextReader(sReader))
-            {
-                writer.Formatting = Formatting.Indented;
-                var jobj = JObject.Load(reader);
-                writer.WriteStartObject();
-                foreach (var property in jobj.Properties())
+                if (File.Exists(fullFilePath))
                 {
-                    writer.WritePropertyName(property.Name);
-                    writer.WriteNull();
+                    return ReadFromJson(key, fullFilePath);
                 }
-                writer.WriteEndObject();
-            }
+
+                return string.Empty;
+            });
         }
 
-        /// <summary>
-        /// This is used to deserialize only one specific value from
-        /// the json without loading the entire object.
-        /// </summary>
-        /// <typeparam name="T">Type of the object to deserialize</typeparam>
-        /// <param name="propertyName">Name of the property to get from json</param>
-        /// <param name="filePath">The file path of the json resource file</param>
-        /// <returns>Deserialized propert from the json</returns>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="ArgumentNullException"></exception>
-        private T PullDeserialize<T>(string propertyName, string filePath)
+        private static string ReadFromJson(string key, string fullFilePath)
         {
-            if (propertyName == null)
-                throw new ArgumentNullException(nameof(propertyName));
+            byte[] buffer = new byte[4096];
+            using var stream = File.OpenRead(fullFilePath);
 
-            if (filePath == null)
-                throw new ArgumentNullException(nameof(filePath));
+            stream.Read(buffer);
 
-            using (var str = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var sReader = new StreamReader(str))
-            using (var reader = new JsonTextReader(sReader))
+            ReadOnlySpan<byte> spanBuffer = buffer;
+
+            // Read past the UTF-8 BOM bytes if a BOM exists.
+            if (spanBuffer.StartsWith(Utf8Bom))
             {
-                while (reader.Read())
-                {
-                    if (reader.TokenType == JsonToken.PropertyName
-                        && (string)reader.Value == propertyName)
-                    {
-                        reader.Read();
-                        return _serializer.Deserialize<T>(reader);
-                    }
-                }
-                return default(T);
+                buffer = spanBuffer.Slice(Utf8Bom.Length).ToArray();
             }
+
+            var reader = new Utf8JsonReader(buffer, false, default);
+
+            while (reader.TokenType != JsonTokenType.PropertyName || !reader.ValueTextEquals(key))
+            {
+                if (!reader.Read())
+                {
+                    GetMoreBytesFromStream(stream, ref buffer, ref reader);
+                }
+            }
+
+            while (!reader.Read())
+            {
+                GetMoreBytesFromStream(stream, ref buffer, ref reader);
+            }
+
+            return reader.GetString();
         }
 
-        #endregion
+        private static void GetMoreBytesFromStream(Stream stream, ref byte[] buffer, ref Utf8JsonReader reader)
+        {
+            int bytesRead;
+            if (reader.BytesConsumed < buffer.Length)
+            {
+                ReadOnlySpan<byte> leftOver = buffer.AsSpan((int)reader.BytesConsumed);
+                if (leftOver.Length == buffer.Length)
+                {
+                    Array.Resize(ref buffer, buffer.Length * 2);
+                }
+
+                leftOver.CopyTo(buffer);
+                bytesRead = stream.Read(buffer.AsSpan(leftOver.Length));
+            }
+            else
+            {
+                bytesRead = stream.Read(buffer);
+            }
+
+            reader = new Utf8JsonReader(buffer, isFinalBlock: bytesRead == 0, reader.CurrentState);
+        }
     }
 }

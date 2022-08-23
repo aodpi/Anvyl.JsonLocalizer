@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using System;
@@ -11,8 +12,8 @@ namespace Anvyl.JsonLocalizer
     /// </summary>
     public class JsonStringLocalizerFactory : IStringLocalizerFactory
     {
-        private readonly IDistributedCache _cache;
         private readonly IOptions<JsonLocalizerOptions> _options;
+        private readonly IMemoryCache _cache;
 
         /// <summary>
         /// Creates a new instance of the <see cref="IStringLocalizerFactory"/>
@@ -20,10 +21,10 @@ namespace Anvyl.JsonLocalizer
         /// </summary>
         /// <param name="cache">The <see cref="IDistributedCache"/> implementation to use</param>
         /// <param name="options">The configuration options for the json localizer</param>
-        public JsonStringLocalizerFactory(IDistributedCache cache, IOptions<JsonLocalizerOptions> options)
+        public JsonStringLocalizerFactory(IOptions<JsonLocalizerOptions> options, IMemoryCache cache)
         {
-            _cache = cache;
             _options = options;
+            _cache = cache;
         }
 
         /// <summary>
@@ -33,7 +34,7 @@ namespace Anvyl.JsonLocalizer
         /// <param name="resourceSource">Type of the resource</param>
         /// <returns></returns>
         public IStringLocalizer Create(Type resourceSource) =>
-            new JsonStringLocalizer(_cache, _options);
+            new JsonStringLocalizer(_options, _cache);
 
         /// <summary>
         /// Creates a new instace of the <see cref="IStringLocalizer"/>
@@ -43,6 +44,6 @@ namespace Anvyl.JsonLocalizer
         /// <param name="location">The location</param>
         /// <returns></returns>
         public IStringLocalizer Create(string baseName, string location) =>
-            new JsonStringLocalizer(_cache, _options);
+            new JsonStringLocalizer(_options, _cache);
     }
 }

@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Localization;
 
 namespace Anvyl.JsonLocalizer.Presentation
 {
@@ -14,12 +6,41 @@ namespace Anvyl.JsonLocalizer.Presentation
     {
         public static void Main(string[] args)
         {
-            BuildWebHost(args).Run();
-        }
+            var builder = WebApplication.CreateBuilder(args);
 
-        public static IWebHost BuildWebHost(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .Build();
+            // Add services to the container.
+            builder.Services.AddRazorPages();
+            builder.Services.AddJsonLocalizer();
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Error");
+                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+
+            app.UseRequestLocalization(op =>
+            {
+                var cultures = new string[] { "en-US", "ro-RO" };
+                op.AddSupportedCultures(cultures);
+                op.AddSupportedUICultures(cultures);
+
+                op.AddInitialRequestCultureProvider(new QueryStringRequestCultureProvider());
+            });
+
+            app.UseRouting();
+
+            app.UseAuthorization();
+
+            app.MapRazorPages();
+
+            app.Run();
+        }
     }
 }

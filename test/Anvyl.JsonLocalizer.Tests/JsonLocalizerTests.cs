@@ -3,6 +3,7 @@ using Xunit;
 using System.Linq;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Anvyl.JsonLocalizer.Tests
 {
@@ -32,7 +33,11 @@ namespace Anvyl.JsonLocalizer.Tests
         [Fact(DisplayName = "Creates a new json file with null values copied from default culture")]
         public void Creates_New_File_Copying_From_Default()
         {
-            var localizerRO = _localizer.WithCulture(new CultureInfo("ro-RO"));
+            var localizerRO = _localizer;
+
+            CultureInfo.CurrentCulture = new CultureInfo("ro-RO");
+            CultureInfo.CurrentUICulture = new CultureInfo("ro-RO");
+
             const string locKey = "Hello";
             Assert.NotNull(localizerRO);
             Assert.True(localizerRO[locKey].ResourceNotFound);
@@ -50,7 +55,7 @@ namespace Anvyl.JsonLocalizer.Tests
             Assert.NotNull(_localizer[locKey]);
             Assert.True(!_localizer[locKey].ResourceNotFound);
             Assert.Equal("Noroc", _localizer[locKey].Value);
-            Assert.Equal("Noroc", _cache.GetString($"{CacheKeyPrefix}_{locKey}"));
+            Assert.Equal("Noroc", _cache.Get<string>($"{CacheKeyPrefix}_{locKey}"));
 
             // Cleanup
             _cache.Remove($"{CacheKeyPrefix}_{locKey}");
@@ -64,7 +69,7 @@ namespace Anvyl.JsonLocalizer.Tests
             Assert.NotNull(_localizer[locKey]);
             Assert.True(_localizer[locKey].ResourceNotFound);
             Assert.Equal($"[{locKey}]", _localizer[locKey].Value);
-            Assert.Null(_cache.GetString($"{CacheKeyPrefix}_{locKey}"));
+            Assert.Null(_cache.Get<string>($"{CacheKeyPrefix}_{locKey}"));
         }
         
         [Fact(DisplayName = "Test GetAllStrings")]

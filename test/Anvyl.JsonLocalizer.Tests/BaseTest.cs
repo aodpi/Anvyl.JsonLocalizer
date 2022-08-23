@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 
@@ -10,12 +11,12 @@ namespace Anvyl.JsonLocalizer.Tests
         protected readonly IStringLocalizer _localizer;
         protected const string CacheKeyPrefix = "__loc__";
         protected const string ResourcesPath = "Localization";
-        protected readonly IDistributedCache _cache;
+        protected readonly IMemoryCache _cache;
 
         public BaseTest()
         {
             var services = new ServiceCollection();
-            services.AddDistributedMemoryCache();
+            services.AddMemoryCache();
             services.Configure<JsonLocalizerOptions>(opts =>
             {
                 opts.CacheKeyPrefix = CacheKeyPrefix;
@@ -29,7 +30,7 @@ namespace Anvyl.JsonLocalizer.Tests
             CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
             
             _localizer = factory.Create(null);
-            _cache = provider.GetRequiredService<IDistributedCache>();
+            _cache = provider.GetRequiredService<IMemoryCache>();
         }
     }
 }
