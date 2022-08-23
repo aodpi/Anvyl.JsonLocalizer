@@ -83,22 +83,29 @@ namespace Anvyl.JsonLocalizer
                 buffer = spanBuffer.Slice(Utf8Bom.Length).ToArray();
             }
 
-            var reader = new Utf8JsonReader(buffer, false, default);
-
-            while (reader.TokenType != JsonTokenType.PropertyName || !reader.ValueTextEquals(key))
+            try
             {
-                if (!reader.Read())
+                var reader = new Utf8JsonReader(buffer, false, default);
+
+                while (reader.TokenType != JsonTokenType.PropertyName || !reader.ValueTextEquals(key))
+                {
+                    if (!reader.Read())
+                    {
+                        GetMoreBytesFromStream(stream, ref buffer, ref reader);
+                    }
+                }
+
+                while (!reader.Read())
                 {
                     GetMoreBytesFromStream(stream, ref buffer, ref reader);
                 }
-            }
 
-            while (!reader.Read())
+                return reader.GetString();
+            }
+            catch(Exception ex)
             {
-                GetMoreBytesFromStream(stream, ref buffer, ref reader);
+                return null;
             }
-
-            return reader.GetString();
         }
 
         private static void GetMoreBytesFromStream(Stream stream, ref byte[] buffer, ref Utf8JsonReader reader)
